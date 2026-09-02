@@ -1,0 +1,152 @@
+{% extends "dashboard/layout.html" %}
+
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block dash_content %}
+<!-- KPI Stats Row -->
+<div class="dash-kpi-grid">
+    <div class="kpi-card kpi-waiting">
+        <div class="kpi-icon-wrap">👥</div>
+        <div class="kpi-content">
+            <span class="kpi-label">Currently Waiting</span>
+            <h2 class="kpi-val" id="kpiWaitingVal">{{ waiting_count }}</h2>
+            <small class="kpi-subtext">{% if waiting_count > 6 %}High queue volume{% else %}Normal queue volume{% endif %}</small>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-wait-time">
+        <div class="kpi-icon-wrap">⏱️</div>
+        <div class="kpi-content">
+            <span class="kpi-label">AI Average Wait</span>
+            <h2 class="kpi-val" id="kpiAvgWaitVal">~{{ avg_wait }} min</h2>
+            <small class="kpi-subtext">Statistical rolling estimate</small>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-served">
+        <div class="kpi-icon-wrap">✓</div>
+        <div class="kpi-content">
+            <span class="kpi-label">People Served Today</span>
+            <h2 class="kpi-val">{{ served_today }}</h2>
+            <small class="kpi-subtext">Across active counters</small>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-counters">
+        <div class="kpi-icon-wrap">⚡</div>
+        <div class="kpi-content">
+            <span class="kpi-label">Active Counters</span>
+            <h2 class="kpi-val">{{ active_counters }} / {{ total_counters }}</h2>
+            <small class="kpi-subtext">{{ total_counters - active_counters }} counter(s) available to open</small>
+        </div>
+    </div>
+</div>
+
+<!-- Primary AI Insight Banner -->
+{% if ai_insights %}
+    {% set top_insight = ai_insights[0] %}
+    <div class="ai-overview-insight-banner insight-{{ top_insight.type }}">
+        <div class="ai-banner-left">
+            <div class="ai-banner-badge">
+                <span>🧠</span>
+                <span>{{ top_insight.badge }}</span>
+            </div>
+            <h3>{{ top_insight.title }}</h3>
+            <p>{{ top_insight.message }}</p>
+        </div>
+
+        <div class="ai-banner-action">
+            {% if top_insight.action_type == 'open_counter' %}
+                <button type="button" class="primary-button ai-action-btn" onclick="applyAiRecommendation('{{ org.slug }}', 'open_counter', {{ top_insight.target_counter }})">
+                    <span>⚡ {{ top_insight.action_label }}</span>
+                </button>
+            {% else %}
+                <a href="/org/{{ org.slug }}/ai-insights" class="secondary-button">
+                    <span>View All Insights →</span>
+                </a>
+            {% endif %}
+            <span class="ai-impact-tag">{{ top_insight.impact_metric }}</span>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Counters & Queue Activity Split Layout -->
+<div class="dash-split-grid">
+    <!-- Left: Live Counter Status -->
+    <div class="dash-panel-card">
+        <div class="panel-header">
+            <h3>⚡ Live Service Counters</h3>
+            <a href="/org/{{ org.slug }}/live-queue" class="panel-link">Manage Live Queue →</a>
+        </div>
+
+        <div class="counters-list">
+            {% for c in counters %}
+                <div class="counter-status-row">
+                    <div class="c-info">
+                        <span class="c-num-badge">#{{ c.counter_number }}</span>
+                        <div>
+                            <strong>{{ c.name }}</strong>
+                            <small>Staff: {{ c.staff_name or "Assigned Operator" }}</small>
+                        </div>
+                    </div>
+
+                    <div class="c-state-controls">
+                        <span class="status-pill-c {{ c.status | lower }}">{{ c.status }}</span>
+                        {% if c.status == 'Active' %}
+                            <button type="button" class="btn-sm btn-outline-warning" onclick="toggleCounterStatus('{{ org.slug }}', {{ c.id }}, 'Paused')">Pause</button>
+                            <button type="button" class="btn-sm btn-outline-danger" onclick="toggleCounterStatus('{{ org.slug }}', {{ c.id }}, 'Closed')">Close</button>
+                        {% elif c.status == 'Paused' %}
+                            <button type="button" class="btn-sm btn-outline-success" onclick="toggleCounterStatus('{{ org.slug }}', {{ c.id }}, 'Active')">Resume</button>
+                        {% else %}
+                            <button type="button" class="btn-sm btn-outline-success" onclick="toggleCounterStatus('{{ org.slug }}', {{ c.id }}, 'Active')">Open</button>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Right: Recent Activity -->
+    <div class="dash-panel-card">
+        <div class="panel-header">
+            <h3>📋 Recent Queue Entries</h3>
+            <a href="/org/{{ org.slug }}/live-queue" class="panel-link">View Full Queue →</a>
+        </div>
+
+        <div class="recent-table-wrap">
+            {% if recent_queue %}
+                <table class="dash-mini-table">
+                    <thead>
+                        <tr>
+                            <th>Token</th>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in recent_queue %}
+                            <tr>
+                                <td><strong>#{{ r.token_str or r.token }}</strong></td>
+                                <td>{{ r.name }}</td>
+                                <td>{{ r.service }}</td>
+                                <td>
+                                    <span class="priority-tag {{ r.priority | lower | replace(' ', '-') }}">
+                                        {{ r.priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="token-status-pill {{ r.status | lower }}">{{ r.status }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="empty-text">No recent queue records today.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

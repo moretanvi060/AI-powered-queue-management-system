@@ -1,0 +1,209 @@
+{% extends "dashboard/layout.html" %}
+
+{% block page_title %}Queue Analytics & Performance Metrics{% endblock %}
+
+{% block dash_content %}
+<div class="analytics-header-row">
+    <div>
+        <h2>Operational Metrics & SLA Tracking</h2>
+        <p>Historical and real-time performance indicators for {{ org.name }}.</p>
+    </div>
+    <div class="analytics-filter-badge">
+        <span>Today's Live Batch</span>
+    </div>
+</div>
+
+<!-- Performance Summary Strip -->
+<div class="analytics-kpi-strip">
+    <div class="a-kpi-item">
+        <small>Average Wait Time</small>
+        <strong>14.8 min</strong>
+        <span class="trend-good">↓ 2.4 min from peak</span>
+    </div>
+    <div class="a-kpi-item">
+        <small>Average Service Duration</small>
+        <strong>15.2 min</strong>
+        <span class="trend-neutral">On target</span>
+    </div>
+    <div class="a-kpi-item">
+        <small>Peak Influx Period</small>
+        <strong>11:00 AM - 1:00 PM</strong>
+        <span class="trend-warn">Elevated load</span>
+    </div>
+    <div class="a-kpi-item">
+        <small>SLA Wait Compliance</small>
+        <strong>96.4%</strong>
+        <span class="trend-good">High Performance</span>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="charts-grid-layout">
+    <!-- Chart 1: Hourly Volume & Wait Time -->
+    <div class="dash-panel-card">
+        <div class="panel-header">
+            <h3>📈 Customers Served by Hour</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="hourlyThroughputChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2: Priority Breakdown -->
+    <div class="dash-panel-card">
+        <div class="panel-header">
+            <h3>⚡ Priority Category Distribution</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="priorityPieChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 3: Service Distribution -->
+    <div class="dash-panel-card">
+        <div class="panel-header">
+            <h3>🛠️ Volume by Service Desk</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="serviceBarChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 4: AI Wait Time Trend -->
+    <div class="dash-panel-card">
+        <div class="panel-header">
+            <h3>⏱️ Average Wait Time Trend (min)</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="waitTimeTrendChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_dash_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Hourly Chart
+    const hourlyData = {{ hourly_data | tojson }};
+    const hours = hourlyData.length ? hourlyData.map(d => d.time_of_day) : ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
+    const counts = hourlyData.length ? hourlyData.map(d => d.count) : [4, 7, 12, 14, 9, 11, 8, 5];
+    const waitTimes = hourlyData.length ? hourlyData.map(d => Math.round(d.avg_wait)) : [10, 14, 24, 28, 18, 22, 16, 12];
+
+    const ctx1 = document.getElementById("hourlyThroughputChart");
+    if (ctx1) {
+        new Chart(ctx1, {
+            type: "bar",
+            data: {
+                labels: hours,
+                datasets: [{
+                    label: "Customers Served",
+                    data: counts,
+                    backgroundColor: "rgba(117, 102, 168, 0.75)",
+                    borderColor: "#7566a8",
+                    borderWidth: 1.5,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: "#f0ebef" } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // 2. Priority Pie Chart
+    const priorityData = {{ priority_data | tojson }};
+    const pLabels = priorityData.length ? priorityData.map(p => p.priority_type) : ["Normal", "Appointment", "Senior Citizen", "Emergency"];
+    const pCounts = priorityData.length ? priorityData.map(p => p.count) : [28, 14, 8, 4];
+
+    const ctx2 = document.getElementById("priorityPieChart");
+    if (ctx2) {
+        new Chart(ctx2, {
+            type: "doughnut",
+            data: {
+                labels: pLabels,
+                datasets: [{
+                    data: pCounts,
+                    backgroundColor: ["#c7b9ed", "#ffeadb", "#ffe8ee", "#e5f0e7", "#ffd6d6"],
+                    borderColor: "#ffffff",
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    // 3. Service Bar Chart
+    const serviceData = {{ service_data | tojson }};
+    const sLabels = serviceData.length ? serviceData.map(s => s.service_name) : ["General Consultation", "Specialist", "Diagnostics"];
+    const sCounts = serviceData.length ? serviceData.map(s => s.count) : [24, 16, 12];
+
+    const ctx3 = document.getElementById("serviceBarChart");
+    if (ctx3) {
+        new Chart(ctx3, {
+            type: "bar",
+            data: {
+                labels: sLabels,
+                datasets: [{
+                    label: "Requests",
+                    data: sCounts,
+                    backgroundColor: "rgba(181, 109, 130, 0.75)",
+                    borderColor: "#b56d82",
+                    borderWidth: 1.5,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: "#f0ebef" } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // 4. Wait Time Trend Chart
+    const ctx4 = document.getElementById("waitTimeTrendChart");
+    if (ctx4) {
+        new Chart(ctx4, {
+            type: "line",
+            data: {
+                labels: hours,
+                datasets: [{
+                    label: "Avg Wait (min)",
+                    data: waitTimes,
+                    borderColor: "#c27d55",
+                    backgroundColor: "rgba(255, 234, 219, 0.5)",
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: "#c27d55",
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: "#f0ebef" } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

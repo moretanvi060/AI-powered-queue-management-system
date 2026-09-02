@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Organization Portal Login & Select | AI Queue{% endblock %}
+
+{% block content %}
+<section class="admin-select-section">
+    <div class="section-container">
+        <div class="admin-select-header">
+            <span class="section-kicker">ADMINISTRATION PORTAL</span>
+            <h1>Select an Organization to Manage</h1>
+            <p>Access the operator console, live queue controls, AI insights, and analytics for your organization.</p>
+        </div>
+
+        <div class="admin-orgs-grid">
+            {% for o in organizations %}
+                <div class="admin-org-card">
+                    <div class="admin-org-top">
+                        <span class="org-cat-badge">
+                            {% if o.category == 'Hospital' %}🏥 Hospital
+                            {% elif o.category == 'Clinic' %}🩺 Clinic
+                            {% elif o.category == 'Salon' %}💇 Salon & Spa
+                            {% elif o.category == 'Service Center' %}🔧 Service Center
+                            {% elif o.category == 'Restaurant' %}🍽️ Restaurant
+                            {% elif 'College' in o.category or 'School' in o.category %}🎓 School / College
+                            {% else %}🏛️ {{ o.category }}
+                            {% endif %}
+                        </span>
+                        <span class="admin-counters-pill">{{ o.total_counters }} Desks Configured</span>
+                    </div>
+
+                    <h3 class="admin-org-name">{{ o.name }}</h3>
+                    <p class="admin-org-desc">{{ o.description }}</p>
+
+                    <div class="admin-card-actions">
+                        <a href="/org/{{ o.slug }}/dashboard" class="primary-button admin-open-btn">
+                            <span>Open Management Console</span>
+                            <span>→</span>
+                        </a>
+                        <a href="/org/{{ o.slug }}/live-queue" class="secondary-button admin-live-btn" title="Open Queue Operator Console">
+                            <span>⚡ Live Queue</span>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="admin-register-prompt">
+            <div class="prompt-box">
+                <div>
+                    <h3>Want to onboard a new organization?</h3>
+                    <p>Register a hospital, clinic, salon, service center, restaurant, or college in seconds.</p>
+                </div>
+                <a href="/register-org" class="primary-button">
+                    <span>+ Register New Organization</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

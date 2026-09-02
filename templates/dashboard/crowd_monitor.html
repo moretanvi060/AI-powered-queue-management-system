@@ -1,0 +1,148 @@
+{% extends "dashboard/layout.html" %}
+
+{% block page_title %}AI Crowd & Queue Density Monitor{% endblock %}
+
+{% block dash_content %}
+<div class="crowd-monitor-banner">
+    <div class="cm-banner-left">
+        <span class="cm-kicker">👁️ REAL-TIME SPATIAL TELEMETRY</span>
+        <h2>AI Waiting Lounge Crowd & Density Visualizer</h2>
+        <p>
+            Simulated optical sensor & computer-vision telemetry measuring occupancy density, queue physical buildup, and spatial flow across waiting zones.
+        </p>
+    </div>
+
+    <!-- Live Telemetry Badge -->
+    <div class="cm-live-telemetry-badge">
+        <div class="telemetry-stat">
+            <small>Estimated Physical Crowd</small>
+            <h2 id="crowdCountVal">{{ telemetry.estimated_crowd }} people</h2>
+        </div>
+        <div class="telemetry-status-pill status-{{ telemetry.density_status | lower }}" id="crowdStatusPill">
+            {{ telemetry.density_icon }} {{ telemetry.density_status }} Density ({{ telemetry.density_pct }}%)
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Demo Level Switcher -->
+<div class="demo-crowd-controls-strip">
+    <div class="ctrl-label">
+        <strong>🧪 Demo Simulator Controls:</strong>
+        <small>Simulate different physical crowd levels to test AI reactions and Smart Arrival stagger triggers.</small>
+    </div>
+    <div class="demo-btn-group">
+        <button type="button" class="btn-demo-density {% if telemetry.density_status == 'Normal' %}active{% endif %}" onclick="setSimulatedCrowdLevel('{{ org.slug }}', 'Normal')">
+            🟢 Normal (<10 people)
+        </button>
+        <button type="button" class="btn-demo-density {% if telemetry.density_status == 'Building' %}active{% endif %}" onclick="setSimulatedCrowdLevel('{{ org.slug }}', 'Building')">
+            🟡 Building (10-20 people)
+        </button>
+        <button type="button" class="btn-demo-density {% if telemetry.density_status == 'Congested' %}active{% endif %}" onclick="setSimulatedCrowdLevel('{{ org.slug }}', 'Congested')">
+            🔴 Congested (>20 people)
+        </button>
+    </div>
+</div>
+
+<!-- Radar / Heatmap Visualizer & Zones Grid -->
+<div class="crowd-visual-grid">
+    <!-- Left: Spatial Radar Visualizer -->
+    <div class="dash-panel-card spatial-canvas-card">
+        <div class="panel-header">
+            <h3>🗺️ Spatial Lounge Occupancy Radar</h3>
+            <span class="sensor-tag">Sensor Feed: Simulated (OpenCV/YOLO Ready)</span>
+        </div>
+
+        <div class="radar-visualizer-container">
+            <div class="radar-grid-bg">
+                <div class="radar-circle circle-1"></div>
+                <div class="radar-circle circle-2"></div>
+                <div class="radar-circle circle-3"></div>
+                <div class="radar-sweep-line"></div>
+            </div>
+
+            <!-- Dynamic Crowd Dots Container -->
+            <div class="crowd-dots-overlay" id="crowdDotsOverlay">
+                <!-- Dots generated via JS based on count -->
+            </div>
+
+            <!-- Zone Label Overlays -->
+            <div class="zone-label-tag pos-reception">Reception Bay</div>
+            <div class="zone-label-tag pos-lounge">Main Waiting Lounge</div>
+            <div class="zone-label-tag pos-counters">Service Counters 1-4</div>
+        </div>
+
+        <div class="canvas-footer-note">
+            <small>ℹ <em>Physical crowd telemetry is currently running in demonstration mode. Computer vision pipelines (YOLOv8/DeepSORT) can be connected via RTSP camera feeds without altering architecture.</em></small>
+        </div>
+    </div>
+
+    <!-- Right: Zone Breakdown & Recommendations -->
+    <div class="dash-panel-card">
+        <div class="panel-header">
+            <h3>🏢 Zone Occupancy Breakdown</h3>
+        </div>
+
+        <div class="zones-list">
+            {% for z in telemetry.zones %}
+                <div class="zone-item-row">
+                    <div class="z-header">
+                        <strong>{{ z.zone }}</strong>
+                        <span>{{ z.occupancy }}% Occupied</span>
+                    </div>
+                    <div class="z-track">
+                        <div class="z-fill {% if z.occupancy > 75 %}bg-danger{% elif z.occupancy > 45 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ z.occupancy }}%;"></div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- AI Crowd Recommendation Box -->
+        <div class="ai-crowd-rec-box mt-4">
+            <div class="rec-icon">🧠</div>
+            <div>
+                <strong>AI Crowd Management Recommendation</strong>
+                <p id="crowdRecText">{{ telemetry.recommendation }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_dash_js %}
+<script>
+function renderCrowdDots(count) {
+    const container = document.getElementById("crowdDotsOverlay");
+    if (!container) return;
+    container.innerHTML = "";
+    
+    for (let i = 0; i < count; i++) {
+        const dot = document.createElement("div");
+        dot.className = "sim-person-dot";
+        // Random positions inside radar bounds
+        const top = 15 + Math.random() * 70;
+        const left = 15 + Math.random() * 70;
+        dot.style.top = `${top}%`;
+        dot.style.left = `${left}%`;
+        dot.style.animationDelay = `${(i * 0.15) % 2}s`;
+        container.appendChild(dot);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    renderCrowdDots({{ telemetry.estimated_crowd }});
+});
+
+function setSimulatedCrowdLevel(slug, level) {
+    fetch(`/api/org/${slug}/update-crowd`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: level })
+    })
+    .then(res => res.json())
+    .then(data => {
+        window.location.reload();
+    })
+    .catch(err => console.error("Failed to update crowd level", err));
+}
+</script>
+{% endblock %}

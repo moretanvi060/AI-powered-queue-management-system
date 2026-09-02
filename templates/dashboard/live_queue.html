@@ -1,0 +1,203 @@
+{% extends "dashboard/layout.html" %}
+
+{% block page_title %}Live Queue Operator Console{% endblock %}
+
+{% block dash_content %}
+<!-- Operator Action Bar -->
+<div class="operator-action-bar">
+    <div class="counter-selector-box">
+        <label for="activeOperatingCounter">Operating Counter:</label>
+        <select id="activeOperatingCounter" class="dash-select">
+            {% set ns = namespace(found=false) %}
+            {% for c in counters %}
+                <option value="{{ c.id }}" {% if c.status != 'Active' %}disabled{% elif not ns.found %}selected{% set ns.found = true %}{% endif %}>
+                    {{ c.name }} ({{ c.status }})
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="operator-quick-btns">
+        <button type="button" class="primary-button call-next-btn" onclick="callNextCustomer('{{ org.slug }}')">
+            <span class="btn-icon">⚡</span>
+            <span>Call Next Customer (AI Priority)</span>
+        </button>
+
+        <button type="button" class="secondary-button" onclick="openWalkinModal()">
+            <span>+ Add Walk-in Customer</span>
+        </button>
+    </div>
+</div>
+
+<!-- Active Counters Serving Strip -->
+<div class="operator-counters-section">
+    <div class="section-title-strip">
+        <h3>⚡ Active Counters & Currently Serving</h3>
+    </div>
+
+    <div class="serving-station-grid">
+        {% for c in counters %}
+            {% set active_cust = None %}
+            {% for s in serving %}
+                {% if s.counter_number == c.counter_number %}
+                    {% set active_cust = s %}
+                {% endif %}
+            {% endfor %}
+
+            <div class="station-card {% if c.status == 'Active' %}active{% else %}offline{% endif %}">
+                <div class="station-header">
+                    <span class="st-num">#{{ c.counter_number }}</span>
+                    <div>
+                        <strong>{{ c.name }}</strong>
+                        <small>Staff: {{ c.staff_name or "Operator" }}</small>
+                    </div>
+                    <span class="status-pill-c {{ c.status | lower }}">{{ c.status }}</span>
+                </div>
+
+                <div class="station-serving-content">
+                    {% if c.status == 'Active' and active_cust %}
+                        <div class="current-token-pill">
+                            <small>NOW SERVING</small>
+                            <h2>#{{ active_cust.token_str or active_cust.token }}</h2>
+                            <p><strong>{{ active_cust.name }}</strong> ({{ active_cust.service }})</p>
+                            <span class="priority-tag {{ active_cust.priority | lower | replace(' ', '-') }}">
+                                {{ active_cust.priority }}
+                            </span>
+                        </div>
+
+                        <div class="station-actions-row">
+                            <button type="button" class="btn-complete" onclick="completeCustomerToken('{{ org.slug }}', {{ active_cust.id }})">
+                                ✓ Complete Service
+                            </button>
+                            <button type="button" class="btn-skip" onclick="skipCustomerToken('{{ org.slug }}', {{ active_cust.id }})">
+                                ↷ Skip
+                            </button>
+                        </div>
+                    {% elif c.status == 'Active' %}
+                        <div class="station-empty-content">
+                            <span class="idle-text">Counter Idle / Ready</span>
+                            <p>Click "Call Next Customer" to dispatch next in line.</p>
+                        </div>
+                    {% else %}
+                        <div class="station-empty-content">
+                            <span class="text-closed">Counter Closed</span>
+                            <button type="button" class="btn-sm btn-outline-success" onclick="toggleCounterStatus('{{ org.slug }}', {{ c.id }}, 'Active')">Open Counter</button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Prioritized Waiting List Table -->
+<div class="dash-panel-card">
+    <div class="panel-header">
+        <div>
+            <h3>📋 Waiting Queue ({{ waiting | length }} Customers)</h3>
+            <p class="panel-subtitle">Sorted by AI Multi-Tier Priority (Emergency > Senior Citizen > Appointment > Special Service > Normal with Anti-Starvation Boost)</p>
+        </div>
+    </div>
+
+    {% if waiting %}
+        <div class="table-responsive">
+            <table class="dash-data-table">
+                <thead>
+                    <tr>
+                        <th>Queue Position</th>
+                        <th>Token</th>
+                        <th>Customer Name</th>
+                        <th>Service</th>
+                        <th>Priority Category</th>
+                        <th>Wait Time Estimate</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in waiting %}
+                        <tr class="{% if loop.first %}row-highlight{% endif %}">
+                            <td>
+                                {% if loop.first %}
+                                    <span class="pos-badge next">NEXT IN LINE</span>
+                                {% else %}
+                                    <span class="pos-badge">{{ loop.index }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>#{{ w.token_str or w.token }}</strong>
+                            </td>
+                            <td>
+                                <strong>{{ w.name }}</strong>
+                                {% if w.phone %}<small class="d-block text-muted">{{ w.phone }}</small>{% endif %}
+                            </td>
+                            <td>{{ w.service }}</td>
+                            <td>
+                                <span class="priority-tag {{ w.priority | lower | replace(' ', '-') }}">
+                                    {{ w.priority }}
+                                </span>
+                            </td>
+                            <td>~{{ w.estimated_wait_min }} min</td>
+                            <td>
+                                <button type="button" class="btn-sm btn-outline-primary" onclick="callSpecificCustomer('{{ org.slug }}', {{ w.id }})">
+                                    Serve Now
+                                </button>
+                                <button type="button" class="btn-sm btn-outline-danger" onclick="skipCustomerToken('{{ org.slug }}', {{ w.id }})">
+                                    Skip
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state-box">
+            <div class="empty-icon">✓</div>
+            <h3>Waiting queue is clear</h3>
+            <p>No waiting customers at this moment.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Walk-in Customer Modal -->
+<div class="modal-overlay" id="walkinModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Add Walk-in Customer</h3>
+            <button type="button" class="modal-close-btn" onclick="closeWalkinModal()">✕</button>
+        </div>
+
+        <form id="walkinForm" onsubmit="submitWalkin(event, '{{ org.slug }}')">
+            <div class="form-field-group">
+                <label for="walkinName">Customer Full Name</label>
+                <input type="text" id="walkinName" placeholder="e.g. Alex Morgan" required>
+            </div>
+
+            <div class="form-field-group">
+                <label for="walkinService">Select Service</label>
+                <select id="walkinService" required>
+                    {% for s in services %}
+                        <option value="{{ s.id }}">{{ s.name }} (~{{ s.avg_duration_min }} min)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-field-group">
+                <label for="walkinPriority">Priority Classification</label>
+                <select id="walkinPriority">
+                    <option value="Normal">Normal</option>
+                    <option value="Senior Citizen">Senior Citizen</option>
+                    <option value="Appointment">Appointment</option>
+                    <option value="Emergency">Emergency</option>
+                    <option value="Special Service">Special Service</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="secondary-button" onclick="closeWalkinModal()">Cancel</button>
+                <button type="submit" class="primary-button">Generate Token & Insert</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

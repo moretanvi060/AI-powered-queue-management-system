@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Explore Services & Organizations | AI Queue{% endblock %}
+
+{% block content %}
+<section class="explore-hero">
+    <div class="section-container">
+        <div class="explore-header">
+            <span class="section-kicker">DISCOVER & JOIN</span>
+            <h1>Find an Organization & Join Queue</h1>
+            <p>Select a sector below or search by organization name to see live queue conditions and estimated AI waiting times.</p>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="explore-controls">
+            <!-- Search Bar -->
+            <form method="GET" action="/explore" class="search-form">
+                <div class="search-input-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search by hospital, clinic, salon, restaurant..." aria-label="Search organizations">
+                    {% if selected_category %}
+                        <input type="hidden" name="category" value="{{ selected_category }}">
+                    {% endif %}
+                    <button type="submit" class="primary-button search-btn">Search</button>
+                </div>
+            </form>
+
+            <!-- Category Pills -->
+            <div class="category-pills-row">
+                <a href="/explore{% if search_query %}?q={{ search_query }}{% endif %}" class="cat-filter-pill {% if not selected_category %}active{% endif %}">
+                    <span>✦ All Sectors</span>
+                </a>
+                {% for cat in categories %}
+                    <a href="/explore?category={{ cat.name | urlencode }}{% if search_query %}&q={{ search_query }}{% endif %}" 
+                       class="cat-filter-pill {% if selected_category == cat.name %}active{% endif %}">
+                        <span>{{ cat.icon }} {{ cat.name }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Organizations List -->
+<section class="explore-results-section">
+    <div class="section-container">
+        {% if organizations %}
+            <div class="orgs-grid">
+                {% for org in organizations %}
+                    <div class="org-card">
+                        <div class="org-card-top">
+                            <span class="org-cat-badge">
+                                {% if org.category == 'Hospital' %}🏥 Hospital
+                                {% elif org.category == 'Clinic' %}🩺 Clinic
+                                {% elif org.category == 'Salon' %}💇 Salon & Spa
+                                {% elif org.category == 'Service Center' %}🔧 Service Center
+                                {% elif org.category == 'Restaurant' %}🍽️ Restaurant
+                                {% elif 'College' in org.category or 'School' in org.category %}🎓 School / College
+                                {% else %}🏛️ {{ org.category }}
+                                {% endif %}
+                            </span>
+                            <span class="queue-status-indicator online">
+                                <span class="pulse-dot"></span>
+                                Queue Active
+                            </span>
+                        </div>
+
+                        <h3 class="org-title">{{ org.name }}</h3>
+                        <p class="org-address">📍 {{ org.address or "Central Campus / Downtown" }}</p>
+                        <p class="org-desc">{{ org.description }}</p>
+
+                        <!-- Live Queue Metrics -->
+                        <div class="org-stats-strip">
+                            <div class="stat-item">
+                                <small>Currently Waiting</small>
+                                <strong>{{ org.waiting_count }} people</strong>
+                            </div>
+                            <div class="stat-item">
+                                <small>Active Desks</small>
+                                <strong>{{ org.active_counters }} counter(s)</strong>
+                            </div>
+                            <div class="stat-item highlight">
+                                <small>AI Estimated Wait</small>
+                                <strong>~{{ org.predicted_wait_min }} min</strong>
+                            </div>
+                        </div>
+
+                        <!-- Card Action Buttons -->
+                        <div class="org-card-actions">
+                            <a href="/join?org={{ org.slug }}" class="primary-button join-org-btn">
+                                <span>Join Queue</span>
+                                <span>→</span>
+                            </a>
+                            <a href="/live-queue/{{ org.slug }}" class="secondary-button live-board-btn" title="View Public Waiting Board">
+                                <span>Live Board</span>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state-box">
+                <div class="empty-icon">🔍</div>
+                <h3>No organizations found</h3>
+                <p>We couldn't find any organizations matching your search criteria. Try a different sector or query.</p>
+                <a href="/explore" class="primary-button">View All Organizations</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

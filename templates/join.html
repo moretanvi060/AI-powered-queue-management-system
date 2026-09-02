@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Join a Queue | AI Queue Digital Token{% endblock %}
+
+{% block content %}
+<section class="join-page-section">
+    <div class="join-wrapper">
+        <div class="join-card-container">
+            <!-- Left Info Panel -->
+            <div class="join-info-panel">
+                <div class="panel-badge">
+                    <span>✦</span>
+                    <span>SMART QUEUE ADMISSION</span>
+                </div>
+
+                <h2>Skip the line. <span class="gradient-text">Keep your time.</span></h2>
+                <p>
+                    Enter your details below to receive your digital queue token, AI waiting-time estimation, and Smart Arrival departure updates.
+                </p>
+
+                <div class="join-perks-list">
+                    <div class="perk-item">
+                        <div class="perk-icon">🎫</div>
+                        <div>
+                            <strong>Instant Digital Token</strong>
+                            <p>No paper receipts or physical standing in waiting lobbies.</p>
+                        </div>
+                    </div>
+                    <div class="perk-item">
+                        <div class="perk-icon">🧠</div>
+                        <div>
+                            <strong>AI Wait Prediction</strong>
+                            <p>Real-time statistical estimate factoring active counters and queue load.</p>
+                        </div>
+                    </div>
+                    <div class="perk-item">
+                        <div class="perk-icon">🚗</div>
+                        <div>
+                            <strong>Smart Arrival Sync</strong>
+                            <p>Calculates when you should leave home based on simulated traffic.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-quote-box">
+                    <p>"The best waiting experience is not having to wait in the room at all."</p>
+                </div>
+            </div>
+
+            <!-- Right Form Area -->
+            <div class="join-form-panel">
+                <div class="form-header">
+                    <span class="form-kicker">STEP-BY-STEP ADMISSION</span>
+                    <h3>Get Your Queue Token</h3>
+                    <p>Fill in the required information to claim your place in line.</p>
+                </div>
+
+                <form method="POST" action="/join" id="joinQueueForm" class="join-form">
+                    <!-- 1. Select Organization -->
+                    <div class="form-field-group">
+                        <label for="orgSelect">
+                            <span>Select Organization / Provider</span>
+                            <span class="required">*</span>
+                        </label>
+                        <select name="org_id" id="orgSelect" required onchange="loadServicesForOrg(this.value)">
+                            {% for org in organizations %}
+                                <option value="{{ org.id }}" {% if selected_org and selected_org.id == org.id %}selected{% endif %}>
+                                    {{ org.name }} ({{ org.category }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="field-hint">Choose where you need service today.</small>
+                    </div>
+
+                    <!-- 2. Select Service -->
+                    <div class="form-field-group">
+                        <label for="serviceSelect">
+                            <span>Select Service Type</span>
+                            <span class="required">*</span>
+                        </label>
+                        <select name="service_id" id="serviceSelect" required>
+                            {% for s in services %}
+                                <option value="{{ s.id }}">
+                                    {{ s.name }} (~{{ s.avg_duration_min }} min avg)
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="field-hint">Specific desk or department within the organization.</small>
+                    </div>
+
+                    <!-- 3. Customer Full Name -->
+                    <div class="form-field-group">
+                        <label for="customerName">
+                            <span>Your Full Name</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input type="text" name="name" id="customerName" placeholder="e.g. Jordan Smith" required>
+                    </div>
+
+                    <!-- 4. Contact Phone (Optional) -->
+                    <div class="form-field-group">
+                        <label for="customerPhone">
+                            <span>Phone Number (Optional for SMS updates)</span>
+                        </label>
+                        <input type="tel" name="phone" id="customerPhone" placeholder="e.g. +1 (555) 019-2834">
+                    </div>
+
+                    <!-- 5. Priority Classification -->
+                    <div class="form-field-group">
+                        <label for="prioritySelect">
+                            <span>Priority Category</span>
+                        </label>
+                        <select name="priority" id="prioritySelect">
+                            <option value="Normal">Normal (Standard Walk-in / Digital Queue)</option>
+                            <option value="Senior Citizen">Senior Citizen (Elderly / Accessibility Priority)</option>
+                            <option value="Appointment">Appointment (Pre-Scheduled Time Slot)</option>
+                            <option value="Emergency">Emergency (Critical Care / Fast-Track)</option>
+                            <option value="Special Service">Special Service (Disability / Specialized Support)</option>
+                        </select>
+                        <small class="field-hint">AI weighted routing prioritizes urgent cases fairly without starving standard queues.</small>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="primary-button join-submit-btn" id="joinSubmitBtn">
+                        <span>Get My Digital Token</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
+
+                    <div class="form-footer-terms">
+                        <small>🔒 Your information is securely handled and discarded after queue completion.</small>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadServicesForOrg(orgId) {
+    const serviceSelect = document.getElementById("serviceSelect");
+    if (!serviceSelect) return;
+    serviceSelect.innerHTML = "<option value=''>Loading available services...</option>";
+
+    fetch(`/api/services-by-org/${orgId}`)
+        .then(res => res.json())
+        .then(services => {
+            serviceSelect.innerHTML = "";
+            if (services.length === 0) {
+                serviceSelect.innerHTML = "<option value=''>General Service</option>";
+                return;
+            }
+            services.forEach(s => {
+                const opt = document.createElement("option");
+                opt.value = s.id;
+                opt.textContent = `${s.name} (~${s.avg_duration_min} min avg)`;
+                serviceSelect.appendChild(opt);
+            });
+        })
+        .catch(err => {
+            console.error("Failed to load services", err);
+            serviceSelect.innerHTML = "<option value=''>General Service</option>";
+        });
+}
+</script>
+{% endblock %}

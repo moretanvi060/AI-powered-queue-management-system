@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Live Queue Display Board | {{ org.name }}{% endblock %}
+
+{% block content %}
+<section class="live-board-section">
+    <div class="live-board-container">
+        <!-- Board Header -->
+        <div class="board-header">
+            <div class="board-org-info">
+                <span class="board-cat-tag">
+                    {% if org.category == 'Hospital' %}🏥 Hospital Outpatient & Triage
+                    {% elif org.category == 'Clinic' %}🩺 Family & Specialist Clinic
+                    {% elif org.category == 'Salon' %}💇 Style & Beauty Lounge
+                    {% elif org.category == 'Service Center' %}🔧 Diagnostic & Repair Hub
+                    {% elif org.category == 'Restaurant' %}🍽️ Table Dining Waitlist
+                    {% elif 'College' in org.category or 'School' in org.category %}🎓 Student Services Center
+                    {% else %}🏛️ {{ org.category }}
+                    {% endif %}
+                </span>
+                <h1 class="board-title">{{ org.name }}</h1>
+                <p class="board-subtitle">Live Public Queue Display & Counter Status</p>
+            </div>
+
+            <div class="board-header-meta">
+                <div class="live-clock-card">
+                    <span class="clock-label">CURRENT TIME</span>
+                    <strong id="liveClockDisplay">--:--:--</strong>
+                </div>
+                <div class="board-badge-pill">
+                    <span class="pulse-dot"></span>
+                    <span>ACTIVE BOARD</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Now Serving Counters Grid -->
+        <div class="now-serving-section">
+            <div class="section-title-strip">
+                <h2>⚡ NOW SERVING AT COUNTERS</h2>
+                <span class="serving-count-badge">{{ serving | length }} Active Counter(s) Serving</span>
+            </div>
+
+            <div class="serving-counters-grid">
+                {% for c in counters %}
+                    {% set active_item = None %}
+                    {% for s in serving %}
+                        {% if s.counter_number == c.counter_number %}
+                            {% set active_item = s %}
+                        {% endif %}
+                    {% endfor %}
+
+                    <div class="counter-display-card {% if c.status == 'Active' %}active{% else %}offline{% endif %}">
+                        <div class="counter-top">
+                            <span class="counter-name-badge">
+                                {{ c.name }}
+                            </span>
+                            <span class="counter-status-tag {{ c.status | lower }}">
+                                {{ c.status }}
+                            </span>
+                        </div>
+
+                        <div class="serving-token-box">
+                            <small>TOKEN NUMBER</small>
+                            {% if c.status == 'Active' %}
+                                {% if c.current_token_id %}
+                                    <h2 class="serving-token-number">
+                                        {% for s in serving if s.id == c.current_token_id %}
+                                            #{{ s.token_str or s.token }}
+                                        {% else %}
+                                            #{{ c.counter_number }}-01
+                                        {% endfor %}
+                                    </h2>
+                                    <span class="serving-customer-name">
+                                        {% for s in serving if s.id == c.current_token_id %}
+                                            {{ s.name }} ({{ s.service }})
+                                        {% else %}
+                                            Currently Serving
+                                        {% endfor %}
+                                    </span>
+                                {% else %}
+                                    <h2 class="serving-token-number text-muted">Ready</h2>
+                                    <span class="serving-customer-name">Awaiting next in line</span>
+                                {% endif %}
+                            {% else %}
+                                <h2 class="serving-token-number text-closed">Closed</h2>
+                                <span class="serving-customer-name">Counter offline</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="counter-staff-footer">
+                            <span>Staff: <strong>{{ c.staff_name or "Assigned Operator" }}</strong></span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Waiting Queue Table -->
+        <div class="waiting-queue-section">
+            <div class="section-title-strip">
+                <h2>📋 UPCOMING TOKENS (AI PRIORITIZED)</h2>
+                <span class="waiting-count-badge">{{ waiting | length }} Waiting in Line</span>
+            </div>
+
+            {% if waiting %}
+                <div class="waiting-table-wrapper">
+                    <table class="waiting-table">
+                        <thead>
+                            <tr>
+                                <th>Position</th>
+                                <th>Token</th>
+                                <th>Customer Name</th>
+                                <th>Requested Service</th>
+                                <th>Priority Category</th>
+                                <th>AI Estimated Wait</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cust in waiting %}
+                                <tr class="{% if loop.first %}next-in-line{% endif %}">
+                                    <td class="pos-cell">
+                                        {% if loop.first %}
+                                            <span class="pos-badge next">NEXT</span>
+                                        {% else %}
+                                            <span class="pos-badge">{{ loop.index }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="token-cell">
+                                        <strong>#{{ cust.token_str or cust.token }}</strong>
+                                    </td>
+                                    <td>{{ cust.name }}</td>
+                                    <td>{{ cust.service }}</td>
+                                    <td>
+                                        <span class="priority-tag {{ cust.priority | lower | replace(' ', '-') }}">
+                                            {{ cust.priority }}
+                                        </span>
+                                    </td>
+                                    <td class="wait-cell">
+                                        ~{{ cust.estimated_wait_min }} min
+                                    </td>
+                                    <td>
+                                        <span class="status-badge-waiting">
+                                            {{ cust.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-waiting-card">
+                    <div class="empty-icon">✓</div>
+                    <h3>Queue is currently clear</h3>
+                    <p>No waiting customers at this time. All queues are flowing smoothly.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Board Footer Navigation -->
+        <div class="board-footer-nav">
+            <a href="/join?org={{ org.slug }}" class="primary-button">
+                <span>Join this Organization's Queue →</span>
+            </a>
+            <a href="/explore" class="secondary-button">
+                <span>← Back to Explore</span>
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateClock() {
+    const clockEl = document.getElementById("liveClockDisplay");
+    if (!clockEl) return;
+    const now = new Date();
+    clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Auto refresh board every 10 seconds to show latest movements
+setTimeout(() => {
+    window.location.reload();
+}, 10000);
+</script>
+{% endblock %}

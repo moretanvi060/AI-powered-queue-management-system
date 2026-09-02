@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Register Organization | AI Queue Management System{% endblock %}
+
+{% block content %}
+<section class="register-org-section">
+    <div class="register-org-container">
+        <div class="reg-header-card">
+            <span class="reg-kicker">ONBOARDING PORTAL</span>
+            <h1>Register Your Organization</h1>
+            <p>
+                Join our AI-Powered Smart Queue Management platform. Deploy intelligent queue predictions, Smart Arrival synchronization, and live counter management for your organization.
+            </p>
+        </div>
+
+        <form method="POST" action="/register-org" class="reg-form-card" id="orgRegisterForm">
+            <!-- 1. Basic Organization Details -->
+            <div class="form-section-block">
+                <h3 class="form-sec-title">1. Organization Details</h3>
+                
+                <div class="form-row-2">
+                    <div class="form-field-group">
+                        <label for="orgName">
+                            <span>Organization Name</span>
+                            <span class="required">*</span>
+                        </label>
+                        <input type="text" name="name" id="orgName" placeholder="e.g. Apex Health Multi-Specialty" required>
+                    </div>
+
+                    <div class="form-field-group">
+                        <label for="orgCategory">
+                            <span>Sector / Category (Supported Sectors)</span>
+                            <span class="required">*</span>
+                        </label>
+                        <select name="category" id="orgCategory" required>
+                            <option value="">Select a supported sector...</option>
+                            <option value="Hospital">🏥 Hospital</option>
+                            <option value="Clinic">🩺 Clinic</option>
+                            <option value="Salon">💇 Salon & Spa</option>
+                            <option value="Service Center">🔧 Service Center</option>
+                            <option value="Restaurant">🍽️ Restaurant</option>
+                            <option value="School / College">🎓 School / College</option>
+                        </select>
+                        <small class="field-hint">Only healthcare, beauty, maintenance, hospitality & education supported.</small>
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-field-group">
+                        <label for="orgAddress">
+                            <span>Physical Address / Campus Location</span>
+                        </label>
+                        <input type="text" name="address" id="orgAddress" placeholder="e.g. 102 West Avenue, Medical Corridor">
+                    </div>
+
+                    <div class="form-field-group">
+                        <label for="orgContact">
+                            <span>Contact Phone / Support Line</span>
+                        </label>
+                        <input type="text" name="contact" id="orgContact" placeholder="e.g. +1 (555) 987-6543">
+                    </div>
+                </div>
+
+                <div class="form-field-group">
+                    <label for="orgDesc">
+                        <span>Organization Description</span>
+                    </label>
+                    <textarea name="description" id="orgDesc" rows="3" placeholder="Brief overview of services provided and facility details..."></textarea>
+                </div>
+            </div>
+
+            <!-- 2. Counter Capacity -->
+            <div class="form-section-block">
+                <h3 class="form-sec-title">2. Counter & Desk Capacity</h3>
+                
+                <div class="form-field-group">
+                    <label for="totalCounters">
+                        <span>Initial Number of Service Counters / Desks</span>
+                    </label>
+                    <input type="number" name="total_counters" id="totalCounters" min="1" max="10" value="3" required>
+                    <small class="field-hint">You can activate, pause, or close counters dynamically from your dashboard.</small>
+                </div>
+            </div>
+
+            <!-- 3. Services Offered -->
+            <div class="form-section-block">
+                <div class="sec-title-with-action">
+                    <h3 class="form-sec-title">3. Services & Estimated Durations</h3>
+                    <button type="button" class="secondary-button add-row-btn" onclick="addServiceRow()">
+                        <span>+ Add Another Service</span>
+                    </button>
+                </div>
+
+                <div class="service-rows-container" id="serviceRowsContainer">
+                    <div class="service-input-row">
+                        <div class="form-field-group flex-2">
+                            <label>Service Name</label>
+                            <input type="text" name="service_name[]" placeholder="e.g. General Consultation" required>
+                        </div>
+                        <div class="form-field-group flex-1">
+                            <label>Avg Duration (min)</label>
+                            <input type="number" name="service_duration[]" placeholder="15" value="15" min="2" max="180" required>
+                        </div>
+                        <button type="button" class="remove-row-btn" onclick="removeServiceRow(this)" title="Remove Service">✕</button>
+                    </div>
+
+                    <div class="service-input-row">
+                        <div class="form-field-group flex-2">
+                            <label>Service Name</label>
+                            <input type="text" name="service_name[]" placeholder="e.g. Express Consultation">
+                        </div>
+                        <div class="form-field-group flex-1">
+                            <label>Avg Duration (min)</label>
+                            <input type="number" name="service_duration[]" placeholder="10" value="10" min="2" max="180">
+                        </div>
+                        <button type="button" class="remove-row-btn" onclick="removeServiceRow(this)" title="Remove Service">✕</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-submit-row">
+                <button type="submit" class="primary-button reg-submit-btn">
+                    <span>Register Organization & Launch Dashboard</span>
+                    <span class="btn-arrow">→</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addServiceRow() {
+    const container = document.getElementById("serviceRowsContainer");
+    const row = document.createElement("div");
+    row.className = "service-input-row";
+    row.innerHTML = `
+        <div class="form-field-group flex-2">
+            <label>Service Name</label>
+            <input type="text" name="service_name[]" placeholder="e.g. Specialist Desk" required>
+        </div>
+        <div class="form-field-group flex-1">
+            <label>Avg Duration (min)</label>
+            <input type="number" name="service_duration[]" placeholder="20" value="20" min="2" max="180" required>
+        </div>
+        <button type="button" class="remove-row-btn" onclick="removeServiceRow(this)" title="Remove Service">✕</button>
+    `;
+    container.appendChild(row);
+}
+
+function removeServiceRow(btn) {
+    const rows = document.querySelectorAll(".service-input-row");
+    if (rows.length > 1) {
+        btn.parentElement.remove();
+    } else {
+        alert("Organization must have at least one service.");
+    }
+}
+</script>
+{% endblock %}

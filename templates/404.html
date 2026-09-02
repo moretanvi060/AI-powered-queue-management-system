@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found | AI Queue{% endblock %}
+
+{% block content %}
+<section class="error-page-section">
+    <div class="section-container">
+        <div class="error-card">
+            <span class="error-code">404</span>
+            <h2>Queue Spot Not Found</h2>
+            <p>{{ message or "The page or token you requested does not exist or has expired." }}</p>
+            <div class="error-actions">
+                <a href="/" class="primary-button">← Back to Homepage</a>
+                <a href="/explore" class="secondary-button">Explore Services</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Queue | Smart Queue Management System{% endblock %}</title>
+    <meta name="description" content="AI-Powered Smart Queue Management System with intelligent wait predictions, priority routing, and Smart Arrival traffic optimization.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Playfair+Display:ital,wght@0,600..800;1,600&display=swap" rel="stylesheet">
+    
+    <!-- Core Pastel SaaS Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar" id="navbar">
+        <a href="/" class="logo">
+            <span class="logo-icon">✦</span>
+            <span class="logo-text">AI Queue</span>
+        </a>
+
+        <nav class="nav-links" id="navLinks">
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a>
+            <a href="/explore" class="{% if request.path == '/explore' %}active{% endif %}">Explore Services</a>
+            <a href="/join" class="{% if request.path == '/join' %}active{% endif %}">Join Queue</a>
+            <a href="/live-queue/metro-care-hospital" class="{% if '/live-queue' in request.path %}active{% endif %}">Live Board</a>
+            <a href="/admin" class="nav-org-link">For Organizations →</a>
+        </nav>
+
+        <div class="nav-actions">
+            <a href="/join" class="primary-button nav-cta">
+                <span>Join a Queue</span>
+                <span class="btn-arrow">→</span>
+            </a>
+            <button class="mobile-toggle" id="mobileMenuBtn" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="flash-toast flash-{{ category }}">
+                        <span class="flash-icon">
+                            {% if category == 'success' %}✓{% elif category == 'error' %}⚠️{% else %}ℹ{% endif %}
+                        </span>
+                        <span class="flash-text">{{ message }}</span>
+                        <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- MAIN CONTENT INJECTION -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="logo">
+                    <span class="logo-icon">✦</span>
+                    <span class="logo-text">AI Queue</span>
+                </div>
+                <p class="footer-desc">
+                    Intelligent queue management powered by predictive algorithms, 
+                    Smart Arrival traffic synchronization, and automated priority routing.
+                </p>
+                <div class="footer-badges">
+                    <span class="pill-badge sage">🟢 AI Engine Active</span>
+                    <span class="pill-badge lavender">🚗 Smart Arrival</span>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Supported Sectors</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/explore?category=Hospital">🏥 Hospitals & Emergency</a></li>
+                    <li><a href="/explore?category=Clinic">🩺 Specialty Clinics</a></li>
+                    <li><a href="/explore?category=Salon">💇 Salons & Spas</a></li>
+                    <li><a href="/explore?category=Service+Center">🔧 Service Centers</a></li>
+                    <li><a href="/explore?category=Restaurant">🍽️ Restaurants & Dining</a></li>
+                    <li><a href="/explore?category=School+%2F+College">🎓 Schools & Colleges</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Quick Navigation</h4>
+                <ul class="footer-links-list">
+                    <li><a href="/explore">Search Organizations</a></li>
+                    <li><a href="/join">Get Digital Token</a></li>
+                    <li><a href="/live-queue/metro-care-hospital">Public Display Board</a></li>
+                    <li><a href="/register-org">Register Organization</a></li>
+                    <li><a href="/admin">Organization Portal</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>AI Technology</h4>
+                <p class="footer-tech-note">
+                    Multi-factor waiting time estimation incorporating counter efficiency, 
+                    priority starvation guards, and simulated spatial crowd density telemetry.
+                </p>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span>© 2026 AI Queue Management System. All rights reserved.</span>
+            <span class="footer-sub">Designed with Soft Pastel SaaS Aesthetics • Built for Viva & Production</span>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE FLOATING AI CHATBOT WIDGET -->
+    <div class="chatbot-wrapper" id="chatbotWrapper">
+        <button class="chatbot-toggle-btn" id="chatbotToggle" aria-label="Open AI Assistant">
+            <span class="chatbot-icon">✦</span>
+            <span class="chatbot-badge-ping"></span>
+        </button>
+
+        <div class="chat-drawer" id="chatDrawer">
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="ai-avatar">✦</div>
+                    <div>
+                        <strong>AI Queue Assistant</strong>
+                        <small>Online • Intelligent Helper</small>
+                    </div>
+                </div>
+                <button class="chat-close" id="chatClose">✕</button>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-bubble ai">
+                    Hello! 👋 I am your <strong>AI Queue Assistant</strong>. Ask me anything about your token, waiting times, Smart Arrival departure calculations, or priority rules.
+                </div>
+            </div>
+
+            <div class="chat-suggestions">
+                <button class="sug-pill" onclick="sendChatPrompt('How does Smart Arrival work?')">🚗 Smart Arrival</button>
+                <button class="sug-pill" onclick="sendChatPrompt('What are the priority categories?')">⚡ Priority Rules</button>
+                <button class="sug-pill" onclick="sendChatPrompt('How is AI wait time predicted?')">🧠 AI Prediction</button>
+                <button class="sug-pill" onclick="sendChatPrompt('Show clinic queue')">🩺 Clinic Status</button>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="Type a question or token #..." onkeydown="if(event.key==='Enter') submitChatMessage()">
+                <button class="chat-send-btn" onclick="submitChatMessage()">→</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

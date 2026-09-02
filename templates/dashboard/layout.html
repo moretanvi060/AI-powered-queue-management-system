@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Organization Portal | AI Queue{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Playfair+Display:ital,wght@0,600..800;1,600&display=swap" rel="stylesheet">
+    
+    <!-- Core & Dashboard Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dashboard-body">
+
+    <div class="dashboard-app-layout">
+        <!-- SIDEBAR -->
+        <aside class="dash-sidebar" id="dashSidebar">
+            <div class="sidebar-top">
+                <a href="/" class="dash-brand">
+                    <span class="brand-icon">✦</span>
+                    <div class="brand-text">
+                        <strong>AI Queue</strong>
+                        <small>Organization Portal</small>
+                    </div>
+                </a>
+            </div>
+
+            <div class="current-org-card">
+                <span class="org-sector-tag">
+                    {% if org.category == 'Hospital' %}🏥 Hospital
+                    {% elif org.category == 'Clinic' %}🩺 Clinic
+                    {% elif org.category == 'Salon' %}💇 Salon
+                    {% elif org.category == 'Service Center' %}🔧 Service Center
+                    {% elif org.category == 'Restaurant' %}🍽️ Restaurant
+                    {% elif 'College' in org.category or 'School' in org.category %}🎓 School/College
+                    {% else %}🏛️ {{ org.category }}
+                    {% endif %}
+                </span>
+                <h4 class="sidebar-org-name">{{ org.name }}</h4>
+                <a href="/admin" class="switch-org-link">⇄ Switch Organization</a>
+            </div>
+
+            <nav class="dash-nav-menu">
+                <a href="/org/{{ org.slug }}/dashboard" class="dash-nav-item {% if request.path == '/org/' + org.slug + '/dashboard' %}active{% endif %}">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard Overview</span>
+                </a>
+                <a href="/org/{{ org.slug }}/live-queue" class="dash-nav-item {% if request.path == '/org/' + org.slug + '/live-queue' %}active{% endif %}">
+                    <span class="nav-icon">⚡</span>
+                    <span>Live Queue Operator</span>
+                </a>
+                <a href="/org/{{ org.slug }}/ai-insights" class="dash-nav-item {% if request.path == '/org/' + org.slug + '/ai-insights' %}active{% endif %}">
+                    <span class="nav-icon">🧠</span>
+                    <span>AI Optimization Insights</span>
+                </a>
+                <a href="/org/{{ org.slug }}/crowd-monitor" class="dash-nav-item {% if request.path == '/org/' + org.slug + '/crowd-monitor' %}active{% endif %}">
+                    <span class="nav-icon">👁️</span>
+                    <span>AI Crowd Monitor</span>
+                </a>
+                <a href="/org/{{ org.slug }}/services" class="dash-nav-item {% if request.path == '/org/' + org.slug + '/services' %}active{% endif %}">
+                    <span class="nav-icon">🛠️</span>
+                    <span>Services & Counters</span>
+                </a>
+                <a href="/org/{{ org.slug }}/analytics" class="dash-nav-item {% if request.path == '/org/' + org.slug + '/analytics' %}active{% endif %}">
+                    <span class="nav-icon">📈</span>
+                    <span>Analytics & Metrics</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer-links">
+                <a href="/live-queue/{{ org.slug }}" target="_blank" class="dash-ext-link">
+                    <span>↗ Public Display Board</span>
+                </a>
+                <a href="/" class="dash-ext-link">
+                    <span>← Customer Website</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <div class="dash-main-area">
+            <!-- Topbar -->
+            <header class="dash-topbar">
+                <div class="topbar-left">
+                    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle sidebar">☰</button>
+                    <h2>{% block page_title %}Dashboard{% endblock %}</h2>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="system-status-indicator">
+                        <span class="pulse-dot"></span>
+                        <span>AI Engine: Active</span>
+                    </div>
+
+                    <a href="/live-queue/{{ org.slug }}" target="_blank" class="secondary-button topbar-board-btn">
+                        <span>Live Kiosk ↗</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Flash messages in dashboard -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-container-dash">
+                        {% for category, message in messages %}
+                            <div class="flash-toast flash-{{ category }}">
+                                <span>{{ message }}</span>
+                                <button onclick="this.parentElement.remove()">✕</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Subpage content -->
+            <div class="dash-content-body">
+                {% block dash_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    {% block extra_dash_js %}{% endblock %}
+</body>
+</html>

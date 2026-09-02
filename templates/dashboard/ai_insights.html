@@ -1,0 +1,113 @@
+{% extends "dashboard/layout.html" %}
+
+{% block page_title %}AI Queue Optimization & Insights{% endblock %}
+
+{% block dash_content %}
+<div class="ai-insights-header-banner">
+    <div class="ai-hdr-copy">
+        <div class="ai-badge-pill">
+            <span>🧠</span>
+            <span>AI PREDICTIVE OPTIMIZER</span>
+        </div>
+        <h2>Real-Time Queue Flow & Capacity Insights</h2>
+        <p>
+            The AI Engine continuously evaluates queue pressure, counter throughput rates, priority distribution, and simulated crowd telemetry to generate automated optimization recommendations.
+        </p>
+    </div>
+
+    <div class="ai-status-summary-card">
+        <div class="summary-metric">
+            <small>Queue Pressure</small>
+            <strong class="{% if waiting_count >= 8 %}text-danger{% elif waiting_count >= 5 %}text-warning{% else %}text-success{% endif %}">
+                {% if waiting_count >= 8 %}High Pressure ({{ waiting_count }} waiting)
+                {% elif waiting_count >= 5 %}Moderate Pressure ({{ waiting_count }} waiting)
+                {% else %}Nominal ({{ waiting_count }} waiting)
+                {% endif %}
+            </strong>
+        </div>
+        <div class="summary-metric">
+            <small>Active Capacity</small>
+            <strong>{{ active_counters }} of {{ total_counters }} Counters Active</strong>
+        </div>
+        <div class="summary-metric">
+            <small>Physical Crowd</small>
+            <strong>
+                {% if crowd_status == 'Congested' %}🔴 Congested
+                {% elif crowd_status == 'Building' %}🟡 Building
+                {% else %}🟢 Normal
+                {% endif %}
+            </strong>
+        </div>
+    </div>
+</div>
+
+<!-- AI Generated Actionable Insights List -->
+<div class="ai-insights-list-section">
+    <div class="section-title-strip">
+        <h3>🧠 ACTIVE AI RECOMMENDATIONS</h3>
+        <span class="active-badge">{{ insights | length }} Insight(s) Generated</span>
+    </div>
+
+    <div class="insights-cards-grid">
+        {% for ins in insights %}
+            <div class="insight-card insight-{{ ins.type }}">
+                <div class="ins-card-top">
+                    <span class="ins-badge">{{ ins.badge }}</span>
+                    <span class="ins-impact-pill">{{ ins.impact_metric }}</span>
+                </div>
+
+                <h3 class="ins-title">{{ ins.title }}</h3>
+                <p class="ins-msg">{{ ins.message }}</p>
+
+                <div class="ins-card-footer">
+                    {% if ins.action_type == 'open_counter' and ins.target_counter %}
+                        <button type="button" class="primary-button ins-exec-btn" onclick="applyAiRecommendation('{{ org.slug }}', 'open_counter', {{ ins.target_counter }})">
+                            <span>⚡ {{ ins.action_label }}</span>
+                        </button>
+                    {% elif ins.action_type == 'priority_lane' %}
+                        <a href="/org/{{ org.slug }}/live-queue" class="primary-button ins-exec-btn">
+                            <span>⚡ Open Fast-Track Queue</span>
+                        </a>
+                    {% elif ins.action_type == 'stagger_arrivals' %}
+                        <button type="button" class="primary-button ins-exec-btn" onclick="alert('Smart Arrival staggered departure window activated. Remote customers notified to delay arrival by +8 minutes.')">
+                            <span>🚗 Engage Staggered Buffer</span>
+                        </button>
+                    {% else %}
+                        <span class="ins-nominal-tag">✓ Nominal Operating State</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Mathematical Model Explanation Panel -->
+<div class="dash-panel-card mt-4">
+    <div class="panel-header">
+        <h3>📐 How the AI Prediction & Optimization Engine Calculates</h3>
+    </div>
+    <div class="ai-logic-breakdown-grid">
+        <div class="logic-box">
+            <h4>1. Waiting Time Modeling</h4>
+            <p>
+                $$\text{Estimated Wait} = \frac{\text{Queue Depth} \times \text{Avg Service Duration}}{\text{Active Counters} \times \text{Counter Efficiency}} \times \text{Crowd Friction}$$
+                Confidence rating recalculates dynamically on each token dispatch.
+            </p>
+        </div>
+
+        <div class="logic-box">
+            <h4>2. Bottleneck Detection</h4>
+            <p>
+                When queue length exceeds $5 \times \text{Active Counters}$ or wait time surpasses 25 minutes, the system triggers proactive counter recommendations with calculated % reduction.
+            </p>
+        </div>
+
+        <div class="logic-box">
+            <h4>3. Anti-Starvation Priority</h4>
+            <p>
+                Weighted priority queuing with time aging ($+25\text{ pts/min}$) ensures emergency and senior cases are prioritized while standard walk-ins never experience starvation.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

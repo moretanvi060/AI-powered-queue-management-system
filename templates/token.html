@@ -1,0 +1,507 @@
+{% extends "base.html" %}
+
+{% block title %}Your Queue Token {{ customer.token_str or customer.token }} | AI Queue{% endblock %}
+
+{% block content %}
+<section class="token-page-section">
+    <div class="token-page-container">
+        <!-- Main Digital Token Card -->
+        <div class="token-main-card">
+            <!-- Card Header -->
+            <div class="token-card-header">
+                <div class="token-org-badge">
+                    <span class="org-cat-icon">
+                        {% if org.category == 'Hospital' %}🏥
+                        {% elif org.category == 'Clinic' %}🩺
+                        {% elif org.category == 'Salon' %}💇
+                        {% elif org.category == 'Service Center' %}🔧
+                        {% elif org.category == 'Restaurant' %}🍽️
+                        {% elif 'College' in org.category or 'School' in org.category %}🎓
+                        {% else %}🏛️
+                        {% endif %}
+                    </span>
+                    <div>
+                        <h3>{{ org.name }}</h3>
+                        <small>{{ customer.service }}</small>
+                    </div>
+                </div>
+
+                <div class="token-live-pill">
+                    <span class="pulse-dot"></span>
+                    <span id="queueLiveStatusText">LIVE QUEUE</span>
+                </div>
+            </div>
+
+            <!-- Big Digital Token Display -->
+            <div class="token-hero-display">
+                <span class="token-label">YOUR DIGITAL TOKEN</span>
+                <h1 class="token-large-number" id="tokenNumberDisplay">#{{ customer.token_str or customer.token }}</h1>
+                <div class="token-tags-row">
+                    <span class="token-status-pill {% if customer.status == 'Serving' %}serving{% elif customer.status == 'Completed' %}completed{% elif customer.status == 'Skipped' %}skipped{% else %}waiting{% endif %}" id="customerStatusBadge">
+                        {{ customer.status }}
+                    </span>
+                    {% if customer.priority != 'Normal' %}
+                        <span class="token-priority-pill {{ customer.priority | lower | replace(' ', '-') }}">
+                            ⚡ {{ customer.priority }} Priority
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Live Customer Turn Callout Banner (Appears immediately when token is called) -->
+            <div class="turn-callout-card" id="turnCalloutBanner" style="{% if customer.status != 'Serving' %}display: none;{% endif %}">
+                <div class="turn-header-row">
+                    <span class="turn-badge-pulse">⚡ ACTION REQUIRED</span>
+                    <span class="turn-time-tag" id="turnCallTime">NOW SERVING</span>
+                </div>
+                <div class="turn-content-body">
+                    <div class="turn-party-icon">🎉</div>
+                    <div class="turn-text-info">
+                        <h2 class="turn-main-heading">IT'S YOUR TURN!</h2>
+                        <p class="turn-token-line">Token: <strong>#<span id="turnTokenSpan">{{ customer.token_str or customer.token }}</span></strong></p>
+                        <div class="turn-counter-pill" id="turnCounterPill">
+                            <span class="counter-door-icon">🚪</span>
+                            <span id="turnCounterText">
+                                {% if assigned_counter %}
+                                    Please proceed to <strong>Counter {{ assigned_counter.counter_number }} ({{ assigned_counter.name }})</strong>
+                                {% else %}
+                                    Please proceed to <strong>Service Counter</strong>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Completed Status Card -->
+            <div class="status-completed-card" id="statusCompletedBanner" style="{% if customer.status != 'Completed' %}display: none;{% endif %}">
+                <div class="comp-icon">✓</div>
+                <div>
+                    <h3>Service Completed</h3>
+                    <p>Thank you for visiting {{ org.name }}. Your service has concluded.</p>
+                </div>
+            </div>
+
+            <!-- Token Skipped Status Card -->
+            <div class="status-skipped-card" id="statusSkippedBanner" style="{% if customer.status != 'Skipped' %}display: none;{% endif %}">
+                <div class="skip-icon">↷</div>
+                <div>
+                    <h3>Token Skipped</h3>
+                    <p>Your token was marked as skipped by the counter operator. Please speak with reception or rejoin the queue.</p>
+                </div>
+            </div>
+
+            <!-- Real-time Queue Progress Timeline -->
+            <div class="token-progress-wrapper">
+                <div class="token-progress-labels">
+                    <span>Queue Status</span>
+                    <span id="progressPctLabel">
+                        {% if customer.status == 'Serving' %}100% (Your Turn!)
+                        {% elif customer.status == 'Completed' %}100% (Completed)
+                        {% elif people_ahead == 0 %}90% (Next in line)
+                        {% elif people_ahead <= 2 %}65% (Almost there)
+                        {% else %}35% (In queue)
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="token-progress-track">
+                    <div class="token-progress-fill" id="tokenProgressFill" style="width: {% if customer.status in ('Serving', 'Completed') %}100%{% elif people_ahead == 0 %}90%{% elif people_ahead <= 2 %}65%{% else %}35%{% endif %};"></div>
+                </div>
+            </div>
+
+            <!-- Metrics Split: People Ahead vs Now Serving -->
+            <div class="token-metrics-strip">
+                <div class="token-metric-card">
+                    <span class="t-met-num" id="peopleAheadCount">{{ people_ahead }}</span>
+                    <div class="t-met-text">
+                        <strong>People Ahead</strong>
+                        <small id="aheadSubtext">
+                            {% if customer.status == 'Serving' %}You are being served now!
+                            {% elif customer.status == 'Completed' %}Service finished
+                            {% elif people_ahead == 0 %}You are next!
+                            {% else %}Moving continuously
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+
+                <div class="token-metric-card">
+                    <span class="t-met-num" id="currentServingDisplay">
+                        {% if current_serving %}#{{ current_serving.token_str or current_serving.token }}{% else %}None{% endif %}
+                    </span>
+                    <div class="t-met-text">
+                        <strong>Now Serving</strong>
+                        <small>Active Counter Bay</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Wait Prediction Section -->
+            <div class="ai-wait-prediction-card">
+                <div class="ai-pred-header">
+                    <div class="ai-badge-group">
+                        <span class="ai-icon-box">🧠</span>
+                        <div>
+                            <strong>AI WAITING-TIME PREDICTION</strong>
+                            <small class="ai-conf-text" id="aiConfidenceText">{{ ai_prediction.confidence_pct }}% High Statistical Confidence</small>
+                        </div>
+                    </div>
+                    <div class="ai-wait-time-badge" id="aiWaitBadge">
+                        ~<span id="predictedWaitMinutes">{{ ai_prediction.predicted_wait_min }}</span> min
+                    </div>
+                </div>
+                <p class="ai-pred-explanation" id="aiExplanationText">
+                    {{ ai_prediction.explanation }}
+                </p>
+            </div>
+
+            <!-- =========================================================
+                 🧭 SMART ARRIVAL SYSTEM 🚗
+                 ========================================================= -->
+            <div class="smart-arrival-module" id="smartArrivalModule">
+                <div class="sa-module-header">
+                    <div class="sa-header-title">
+                        <span class="sa-icon">🧭</span>
+                        <div>
+                            <h4>Smart Arrival System 🚗</h4>
+                            <p>AI Queue Prediction + Simulated Traffic Synchronization</p>
+                        </div>
+                    </div>
+                    <span class="sa-status-badge" id="saSyncBadge">LIVE SYNC</span>
+                </div>
+
+                <div class="sa-dashboard-grid">
+                    <!-- Key Result Box: Recommended Departure -->
+                    <div class="sa-result-box">
+                        <small>Recommended Departure</small>
+                        <h2 class="sa-leave-time" id="recommendedLeaveTime">{{ smart_arrival.recommended_leave_time }}</h2>
+                        <span class="sa-turn-time" id="estimatedTurnTime">
+                            Expected Turn: <strong>{{ smart_arrival.estimated_turn_time }}</strong>
+                        </span>
+                    </div>
+
+                    <!-- Travel & Traffic Summary -->
+                    <div class="sa-stats-box">
+                        <div class="sa-stat-row">
+                            <span>Simulated Traffic</span>
+                            <strong id="trafficConditionName">{{ smart_arrival.traffic_icon }} {{ smart_arrival.traffic_name }}</strong>
+                        </div>
+                        <div class="sa-stat-row">
+                            <span>Estimated Travel Time</span>
+                            <strong id="travelDurationText">{{ smart_arrival.travel_time_min }} minutes</strong>
+                        </div>
+                        <div class="sa-stat-row">
+                            <span>Safety Arrival Buffer</span>
+                            <strong>{{ smart_arrival.safety_buffer_min }} minutes</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Traffic & Distance Controls -->
+                <div class="sa-interactive-controls">
+                    <div class="ctrl-group">
+                        <label>Simulated Traffic Condition:</label>
+                        <div class="traffic-pills-selector">
+                            <button type="button" class="traffic-btn {% if smart_arrival.traffic_condition == 'Light' %}active{% endif %}" onclick="updateSmartArrival('Light', currentDistancePreset)">
+                                🟢 Light
+                            </button>
+                            <button type="button" class="traffic-btn {% if smart_arrival.traffic_condition == 'Moderate' %}active{% endif %}" onclick="updateSmartArrival('Moderate', currentDistancePreset)">
+                                🟡 Moderate
+                            </button>
+                            <button type="button" class="traffic-btn {% if smart_arrival.traffic_condition == 'Heavy' %}active{% endif %}" onclick="updateSmartArrival('Heavy', currentDistancePreset)">
+                                🔴 Heavy
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="ctrl-group">
+                        <label>Your Starting Distance / Origin:</label>
+                        <div class="distance-pills-selector">
+                            <button type="button" class="dist-btn {% if smart_arrival.distance_preset == 'nearby' %}active{% endif %}" onclick="updateSmartArrival(currentTrafficCondition, 'nearby')">
+                                Nearby (~3 km)
+                            </button>
+                            <button type="button" class="dist-btn {% if smart_arrival.distance_preset == 'metro' %}active{% endif %}" onclick="updateSmartArrival(currentTrafficCondition, 'metro')">
+                                Mid-City (~8 km)
+                            </button>
+                            <button type="button" class="dist-btn {% if smart_arrival.distance_preset == 'suburb' %}active{% endif %}" onclick="updateSmartArrival(currentTrafficCondition, 'suburb')">
+                                Suburb (~15 km)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Traffic Disclaimer -->
+                <div class="sa-disclaimer-note">
+                    <small>ℹ <em>{{ smart_arrival.disclaimer }}</em></small>
+                </div>
+            </div>
+
+            <!-- Customer Details Summary -->
+            <div class="token-customer-summary">
+                <div class="cust-detail-item">
+                    <span>Customer Name</span>
+                    <strong>{{ customer.name }}</strong>
+                </div>
+                <div class="cust-detail-item">
+                    <span>Service</span>
+                    <strong>{{ customer.service }}</strong>
+                </div>
+                <div class="cust-detail-item">
+                    <span>Priority</span>
+                    <strong>{{ customer.priority }}</strong>
+                </div>
+                <div class="cust-detail-item">
+                    <span>Time Joined</span>
+                    <strong>{{ customer.created_at or "Just now" }}</strong>
+                </div>
+            </div>
+
+            <!-- Actions Row -->
+            <div class="token-card-actions">
+                <a href="/live-queue/{{ org.slug }}" class="secondary-button view-board-btn" target="_blank">
+                    <span>View Public Display Board ↗</span>
+                </a>
+
+                <form method="POST" action="/leave-queue/{{ customer.id }}" onsubmit="return confirm('Are you sure you want to leave the queue? You will forfeit your token spot.');">
+                    <button type="submit" class="leave-queue-btn">
+                        <span>Leave Queue</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentTrafficCondition = "{{ smart_arrival.traffic_condition }}";
+let currentDistancePreset = "{{ smart_arrival.distance_preset }}";
+const tokenId = {{ customer.id }};
+let currentWaitMin = {{ ai_prediction.predicted_wait_min }};
+let previousStatus = "{{ customer.status }}";
+
+// Two-tone cheerful announcement chime when called
+function playCustomerTurnChime() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc1.type = "triangle";
+        osc2.type = "sine";
+
+        osc1.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+        osc1.frequency.setValueAtTime(659.25, ctx.currentTime + 0.18); // E5
+        osc1.frequency.setValueAtTime(783.99, ctx.currentTime + 0.36); // G5
+        osc1.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.54); // C6
+
+        osc2.frequency.setValueAtTime(261.63, ctx.currentTime);
+        osc2.frequency.setValueAtTime(329.63, ctx.currentTime + 0.18);
+        osc2.frequency.setValueAtTime(392.00, ctx.currentTime + 0.36);
+        osc2.frequency.setValueAtTime(523.25, ctx.currentTime + 0.54);
+
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc1.start();
+        osc2.start();
+        osc1.stop(ctx.currentTime + 1.2);
+        osc2.stop(ctx.currentTime + 1.2);
+    } catch (e) {
+        // AudioContext fallback
+    }
+}
+
+// Live Polling every 3 seconds
+function pollTokenStatus() {
+    fetch(`/api/token-status/${tokenId}?traffic=${encodeURIComponent(currentTrafficCondition)}&distance=${encodeURIComponent(currentDistancePreset)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) return;
+
+            const turnBanner = document.getElementById("turnCalloutBanner");
+            const compBanner = document.getElementById("statusCompletedBanner");
+            const skipBanner = document.getElementById("statusSkippedBanner");
+            const statusBadge = document.getElementById("customerStatusBadge");
+            const progressFill = document.getElementById("tokenProgressFill");
+            const progressLabel = document.getElementById("progressPctLabel");
+            const aheadEl = document.getElementById("peopleAheadCount");
+            const aheadSub = document.getElementById("aheadSubtext");
+            const servingEl = document.getElementById("currentServingDisplay");
+
+            // Update current serving in metric card
+            if (servingEl) {
+                servingEl.textContent = data.current_serving !== "None" ? `#${data.current_serving}` : "None";
+            }
+
+            // Handle status transitions
+            if (data.status === 'Serving') {
+                if (previousStatus !== 'Serving') {
+                    playCustomerTurnChime();
+                }
+
+                if (turnBanner) {
+                    turnBanner.style.display = "block";
+                    const turnTokenSpan = document.getElementById("turnTokenSpan");
+                    if (turnTokenSpan) turnTokenSpan.textContent = data.token_str || data.token;
+
+                    const turnCounterText = document.getElementById("turnCounterText");
+                    if (turnCounterText) {
+                        if (data.assigned_counter) {
+                            turnCounterText.innerHTML = `Please proceed to <strong>Counter ${data.assigned_counter.counter_number} (${data.assigned_counter.name})</strong>`;
+                        } else {
+                            turnCounterText.innerHTML = `Please proceed to <strong>Service Counter</strong>`;
+                        }
+                    }
+                }
+                if (compBanner) compBanner.style.display = "none";
+                if (skipBanner) skipBanner.style.display = "none";
+
+                if (statusBadge) {
+                    statusBadge.textContent = "Serving";
+                    statusBadge.className = "token-status-pill serving";
+                }
+                if (aheadEl) aheadEl.textContent = "0";
+                if (aheadSub) aheadSub.textContent = "You are being served now!";
+                if (progressFill) progressFill.style.width = "100%";
+                if (progressLabel) progressLabel.textContent = "100% (Your Turn!)";
+
+                const liveText = document.getElementById("queueLiveStatusText");
+                if (liveText) liveText.textContent = "NOW SERVING";
+
+            } else if (data.status === 'Completed') {
+                if (turnBanner) turnBanner.style.display = "none";
+                if (compBanner) compBanner.style.display = "flex";
+                if (skipBanner) skipBanner.style.display = "none";
+
+                if (statusBadge) {
+                    statusBadge.textContent = "Completed";
+                    statusBadge.className = "token-status-pill completed";
+                }
+                if (aheadEl) aheadEl.textContent = "0";
+                if (aheadSub) aheadSub.textContent = "Service finished";
+                if (progressFill) progressFill.style.width = "100%";
+                if (progressLabel) progressLabel.textContent = "100% (Completed)";
+
+            } else if (data.status === 'Skipped') {
+                if (turnBanner) turnBanner.style.display = "none";
+                if (compBanner) compBanner.style.display = "none";
+                if (skipBanner) skipBanner.style.display = "flex";
+
+                if (statusBadge) {
+                    statusBadge.textContent = "Skipped";
+                    statusBadge.className = "token-status-pill skipped";
+                }
+                if (aheadSub) aheadSub.textContent = "Token skipped";
+
+            } else {
+                // Waiting state
+                if (turnBanner) turnBanner.style.display = "none";
+                if (compBanner) compBanner.style.display = "none";
+                if (skipBanner) skipBanner.style.display = "none";
+
+                if (statusBadge) {
+                    statusBadge.textContent = data.status;
+                    statusBadge.className = "token-status-pill waiting";
+                }
+
+                if (aheadEl) aheadEl.textContent = data.people_ahead;
+                if (aheadSub) {
+                    aheadSub.textContent = (data.people_ahead === 0) ? "You are next!" : "Moving continuously";
+                }
+
+                if (progressFill && progressLabel) {
+                    if (data.people_ahead === 0) {
+                        progressFill.style.width = "90%";
+                        progressLabel.textContent = "90% (Next in line)";
+                    } else if (data.people_ahead <= 2) {
+                        progressFill.style.width = "65%";
+                        progressLabel.textContent = "65% (Almost there)";
+                    } else {
+                        progressFill.style.width = "35%";
+                        progressLabel.textContent = "35% (In queue)";
+                    }
+                }
+            }
+
+            previousStatus = data.status;
+
+            // Update AI prediction
+            if (data.ai_prediction) {
+                currentWaitMin = data.ai_prediction.predicted_wait_min;
+                const waitMinEl = document.getElementById("predictedWaitMinutes");
+                if (waitMinEl) waitMinEl.textContent = currentWaitMin;
+
+                const confEl = document.getElementById("aiConfidenceText");
+                if (confEl) confEl.textContent = `${data.ai_prediction.confidence_pct}% High Statistical Confidence`;
+
+                const expEl = document.getElementById("aiExplanationText");
+                if (expEl) expEl.textContent = data.ai_prediction.explanation;
+            }
+
+            // Update Smart Arrival
+            if (data.smart_arrival) {
+                renderSmartArrivalData(data.smart_arrival);
+            }
+        })
+        .catch(err => console.log("Polling error:", err));
+}
+
+function updateSmartArrival(traffic, distance) {
+    currentTrafficCondition = traffic;
+    currentDistancePreset = distance;
+
+    // Update active UI classes
+    document.querySelectorAll(".traffic-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.textContent.includes(traffic));
+    });
+    document.querySelectorAll(".dist-btn").forEach(btn => {
+        btn.classList.toggle("active", (distance === 'nearby' && btn.textContent.includes('Nearby')) ||
+                                       (distance === 'metro' && btn.textContent.includes('Mid-City')) ||
+                                       (distance === 'suburb' && btn.textContent.includes('Suburb')));
+    });
+
+    fetch('/api/calculate-smart-arrival', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            ai_wait_minutes: currentWaitMin,
+            traffic_condition: currentTrafficCondition,
+            distance_preset: currentDistancePreset,
+            destination_name: "{{ org.name }}"
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        renderSmartArrivalData(data);
+    })
+    .catch(err => console.error("Failed to update Smart Arrival", err));
+}
+
+function renderSmartArrivalData(data) {
+    const leaveEl = document.getElementById("recommendedLeaveTime");
+    if (leaveEl) leaveEl.textContent = data.recommended_leave_time;
+
+    const turnEl = document.getElementById("estimatedTurnTime");
+    if (turnEl) turnEl.innerHTML = `Expected Turn: <strong>${data.estimated_turn_time}</strong>`;
+
+    const trafficCondEl = document.getElementById("trafficConditionName");
+    if (trafficCondEl) trafficCondEl.innerHTML = `${data.traffic_icon} ${data.traffic_name}`;
+
+    const travelEl = document.getElementById("travelDurationText");
+    if (travelEl) travelEl.textContent = `${data.travel_time_min} minutes`;
+}
+
+// Start polling every 3 seconds
+setInterval(pollTokenStatus, 3000);
+</script>
+{% endblock %}

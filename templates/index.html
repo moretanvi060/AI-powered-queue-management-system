@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block title %}AI Queue | Skip the Wait. Make Time Work for You.{% endblock %}
+
+{% block content %}
+<!-- =========================================================
+     HERO SECTION
+     ========================================================= -->
+<section class="hero-section">
+    <div class="hero-container">
+        <!-- Left Hero Copy -->
+        <div class="hero-copy">
+            <div class="ai-badge-pill">
+                <span class="sparkle">✦</span>
+                <span>INTELLIGENT QUEUE MANAGEMENT</span>
+            </div>
+
+            <h1 class="hero-headline">
+                Skip the wait.
+                <span class="gradient-text">Make time work for you.</span>
+            </h1>
+
+            <p class="hero-subtitle">
+                Join queues remotely, know when your turn is coming, and arrive at the right time with intelligent predictions and Smart Arrival traffic synchronization.
+            </p>
+
+            <div class="hero-cta-group">
+                <a href="/join" class="primary-button hero-btn-primary">
+                    <span>Join a Queue</span>
+                    <span class="btn-arrow">→</span>
+                </a>
+                <a href="/admin" class="secondary-button hero-btn-secondary">
+                    <span>For Organizations</span>
+                    <span class="btn-icon">🏛️</span>
+                </a>
+            </div>
+
+            <!-- Trust Indicators -->
+            <div class="hero-trust-row">
+                <div class="trust-item">
+                    <span class="trust-check">✓</span>
+                    <span>AI Wait Predictions</span>
+                </div>
+                <div class="trust-item">
+                    <span class="trust-check">✓</span>
+                    <span>Smart Arrival Traffic</span>
+                </div>
+                <div class="trust-item">
+                    <span class="trust-check">✓</span>
+                    <span>Zero Physical Standing</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Creative Queue Visualizer -->
+        <div class="hero-visualizer">
+            <div class="visualizer-card">
+                <!-- Top Status Header -->
+                <div class="vis-header">
+                    <div class="vis-dots">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                    </div>
+                    <div class="live-pill">
+                        <span class="pulsing-circle"></span>
+                        <span>LIVE AI PREDICTION</span>
+                    </div>
+                </div>
+
+                <!-- Service info -->
+                <div class="vis-org-info">
+                    <div>
+                        <span class="vis-category-tag">🩺 CLINIC SERVICE</span>
+                        <h3 class="vis-org-name">{{ preview_org.name if preview_org else "Sunrise Family Clinic" }}</h3>
+                        <p class="vis-service-name">General Doctor Consultation</p>
+                    </div>
+                    <div class="vis-token-badge">
+                        <small>YOUR TOKEN</small>
+                        <strong>#C-04</strong>
+                    </div>
+                </div>
+
+                <!-- Step Timeline: Joined -> Waiting -> Almost There -> Your Turn -->
+                <div class="queue-timeline">
+                    <div class="timeline-step completed">
+                        <div class="timeline-dot">✓</div>
+                        <span>Joined</span>
+                    </div>
+                    <div class="timeline-line active"></div>
+                    <div class="timeline-step active">
+                        <div class="timeline-dot">2</div>
+                        <span>Waiting</span>
+                    </div>
+                    <div class="timeline-line"></div>
+                    <div class="timeline-step">
+                        <div class="timeline-dot">3</div>
+                        <span>Almost There</span>
+                    </div>
+                    <div class="timeline-line"></div>
+                    <div class="timeline-step">
+                        <div class="timeline-dot">4</div>
+                        <span>Your Turn</span>
+                    </div>
+                </div>
+
+                <!-- Position & Metrics Grid -->
+                <div class="vis-metrics-grid">
+                    <div class="metric-box position-box">
+                        <span class="metric-num">03</span>
+                        <div>
+                            <strong>People Ahead</strong>
+                            <small>Moving smoothly</small>
+                        </div>
+                    </div>
+                    <div class="metric-box serving-box">
+                        <span class="metric-num">#C-01</span>
+                        <div>
+                            <strong>Now Serving</strong>
+                            <small>Counter 1 (Active)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Prediction Banner -->
+                <div class="ai-prediction-banner">
+                    <div class="ai-pulse-icon">🧠</div>
+                    <div class="ai-pred-info">
+                        <div class="ai-pred-top">
+                            <strong>AI Predicted Wait: ~18 min</strong>
+                            <span class="ai-conf-badge">96% Confidence</span>
+                        </div>
+                        <p>Dynamic estimation factoring active counters & priority triage.</p>
+                    </div>
+                </div>
+
+                <!-- Smart Arrival Preview Pill -->
+                <div class="smart-arrival-preview">
+                    <div class="sa-left">
+                        <span class="sa-icon">🚗</span>
+                        <div>
+                            <strong>Smart Arrival: Leave by 4:15 PM</strong>
+                            <small>Traffic: Moderate (🟡 ~14 min travel)</small>
+                        </div>
+                    </div>
+                    <span class="sa-tag">SYNCED</span>
+                </div>
+            </div>
+
+            <!-- Floating Micro Accent Badges -->
+            <div class="floating-accent float-top-right">
+                <span class="accent-icon">⚡</span>
+                <div>
+                    <strong>Fast-Track Priority</strong>
+                    <small>Emergency & Senior routing</small>
+                </div>
+            </div>
+
+            <div class="floating-accent float-bottom-left">
+                <span class="accent-icon">🟢</span>
+                <div>
+                    <strong>Crowd: Normal</strong>
+                    <small>Simulated density telemetry</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- =========================================================
+     WHERE ARE YOU GOING TODAY? (6 CATEGORIES ONLY)
+     ========================================================= -->
+<section class="section-categories" id="services">
+    <div class="section-container">
+        <div class="section-header-center">
+            <span class="section-kicker">BUILT FOR EVERYDAY SECTORS</span>
+            <h2 class="section-title">Where are you going today?</h2>
+            <p class="section-subtitle">
+                Select your destination to discover registered providers, view real-time queue lengths, and claim your digital token.
+            </p>
+        </div>
+
+        <div class="categories-grid">
+            <!-- 1. Hospitals -->
+            <a href="/explore?category=Hospital" class="category-card card-blush">
+                <div class="cat-card-top">
+                    <div class="cat-icon-wrap">🏥</div>
+                    <span class="cat-pill">Emergency & OPD</span>
+                </div>
+                <h3 class="cat-title">Hospitals</h3>
+                <p class="cat-desc">Manage emergency triage, outpatient departments, diagnostic labs, and doctor queues with zero congestion.</p>
+                <div class="cat-card-footer">
+                    <span>Explore Hospitals</span>
+                    <span class="cat-arrow">→</span>
+                </div>
+            </a>
+
+            <!-- 2. Clinics -->
+            <a href="/explore?category=Clinic" class="category-card card-lavender">
+                <div class="cat-card-top">
+                    <div class="cat-icon-wrap">🩺</div>
+                    <span class="cat-pill">Consultations</span>
+                </div>
+                <h3 class="cat-title">Clinics</h3>
+                <p class="cat-desc">Give patients instant digital tokens, real-time wait estimation, and seamless priority routing for senior citizens.</p>
+                <div class="cat-card-footer">
+                    <span>Explore Clinics</span>
+                    <span class="cat-arrow">→</span>
+                </div>
+            </a>
+
+            <!-- 3. Salons -->
+            <a href="/explore?category=Salon" class="category-card card-peach">
+                <div class="cat-card-top">
+                    <div class="cat-icon-wrap">💇</div>
+                    <span class="cat-pill">Beauty & Grooming</span>
+                </div>
+                <h3 class="cat-title">Salons & Spas</h3>
+                <p class="cat-desc">Organize hair styling chairs, spa therapies, and walk-in beauty clients without overcrowded waiting lounges.</p>
+                <div class="cat-card-footer">
+                    <span>Explore Salons</span>
+                    <span class="cat-arrow">→</span>
+                </div>
+            </a>
+
+            <!-- 4. Service Centers -->
+            <a href="/explore?category=Service+Center" class="category-card card-sage">
+                <div class="cat-card-top">
+                    <div class="cat-icon-wrap">🔧</div>
+                    <span class="cat-pill">Diagnostics & Repair</span>
+                </div>
+                <h3 class="cat-title">Service Centers</h3>
+                <p class="cat-desc">Streamline device intake, technician repair desks, express warranty pickups, and vehicle service queues.</p>
+                <div class="cat-card-footer">
+                    <span>Explore Service Hubs</span>
+                    <span class="cat-arrow">→</span>
+                </div>
+            </a>
+
+            <!-- 5. Restaurants -->
+            <a href="/explore?category=Restaurant" class="category-card card-amber">
+                <div class="cat-card-top">
+                    <div class="cat-icon-wrap">🍽️</div>
+                    <span class="cat-pill">Dining Waitlists</span>
+                </div>
+                <h3 class="cat-title">Restaurants</h3>
+                <p class="cat-desc">Coordinate indoor tables, patio dining parties, and banquets with accurate AI turn predictions and table turnarounds.</p>
+                <div class="cat-card-footer">
+                    <span>Explore Dining</span>
+                    <span class="cat-arrow">→</span>
+                </div>
+            </a>
+
+            <!-- 6. Schools & Colleges -->
+            <a href="/explore?category=School+%2F+College" class="category-card card-purple">
+                <div class="cat-card-top">
+                    <div class="cat-icon-wrap">🎓</div>
+                    <span class="cat-pill">Admissions & Desks</span>
+                </div>
+                <h3 class="cat-title">Schools & Colleges</h3>
+                <p class="cat-desc">Transform campus queues for admissions, fee verification, student ID issuance, and counselor meetings.</p>
+                <div class="cat-card-footer">
+                    <span>Explore Campus Desks</span>
+                    <span class="cat-arrow">→</span>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+
+<!-- =========================================================
+     INTELLIGENCE BUILT IN (AI FEATURES)
+     ========================================================= -->
+<section class="section-ai-features" id="ai-features">
+    <div class="section-container">
+        <div class="ai-split-layout">
+            <div class="ai-intro-col">
+                <span class="section-kicker">REAL ALGORITHMIC INTELLIGENCE</span>
+                <h2 class="section-title">A queue system that <span class="gradient-text">thinks ahead.</span></h2>
+                <p class="section-subtitle">
+                    We don't just put "AI" in the title. Our engine continuously models counter speeds, priority weights, queue lengths, and traffic conditions.
+                </p>
+
+                <div class="ai-feature-checklist">
+                    <div class="check-box">
+                        <div class="check-ico">✦</div>
+                        <div>
+                            <strong>Dynamic Statistical Models</strong>
+                            <p>Predictions adjust immediately whenever active counters or queue loads change.</p>
+                        </div>
+                    </div>
+                    <div class="check-box">
+                        <div class="check-ico">✦</div>
+                        <div>
+                            <strong>Anti-Starvation Priority Guards</strong>
+                            <p>Ensures standard customers are never stranded by aging wait time weightings.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ai-cards-grid">
+                <!-- AI Module 1 -->
+                <div class="ai-feature-card">
+                    <div class="ai-card-num">01</div>
+                    <div class="ai-card-icon">🧠</div>
+                    <h3>AI Waiting-Time Prediction</h3>
+                    <p>
+                        Multi-factor calculation based on queue position, active counter throughput, service duration averages, and crowd density friction.
+                    </p>
+                </div>
+
+                <!-- AI Module 2 -->
+                <div class="ai-feature-card">
+                    <div class="ai-card-num">02</div>
+                    <div class="ai-card-icon">⚙️</div>
+                    <h3>Dynamic Queue Optimization</h3>
+                    <p>
+                        Real-time bottleneck analysis that recommends exact counter openings: <em>"Open Counter 3 to reduce wait times by 42%."</em>
+                    </p>
+                </div>
+
+                <!-- AI Module 3 -->
+                <div class="ai-feature-card">
+                    <div class="ai-card-num">03</div>
+                    <div class="ai-card-icon">⚡</div>
+                    <h3>Priority-Based Smart Routing</h3>
+                    <p>
+                        Intelligent scheduling for Emergency, Senior Citizens, Appointments, and Special Accessibility without starving normal customers.
+                    </p>
+                </div>
+
+                <!-- AI Module 4 -->
+                <div class="ai-feature-card">
+                    <div class="ai-card-num">04</div>
+                    <div class="ai-card-icon">👁️</div>
+                    <h3>AI Crowd & Density Monitor</h3>
+                    <p>
+                        Simulated spatial density telemetry classifying waiting lounges into 🟢 Normal, 🟡 Building, and 🔴 Congested states.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- =========================================================
+     SMART ARRIVAL SPOTLIGHT 🚗
+     ========================================================= -->
+<section class="section-smart-arrival">
+    <div class="section-container">
+        <div class="smart-arrival-banner">
+            <div class="sa-banner-copy">
+                <span class="sa-kicker">🧭 INTRODUCING SMART ARRIVAL</span>
+                <h2>Never wait in the lobby. <span class="highlight-text">Arrive exactly on time.</span></h2>
+                <p>
+                    Smart Arrival combines our <strong>AI Queue Prediction</strong> with <strong>Simulated Traffic Analysis</strong> to calculate the precise time you should leave home so you arrive right before your turn.
+                </p>
+                <div class="sa-badges-list">
+                    <span class="pill-badge sage">🟢 Light Traffic (1.0x)</span>
+                    <span class="pill-badge peach">🟡 Moderate Traffic (1.45x)</span>
+                    <span class="pill-badge blush">🔴 Heavy Traffic (2.1x)</span>
+                </div>
+            </div>
+
+            <div class="sa-banner-card">
+                <div class="sa-card-inner">
+                    <div class="sa-card-header">
+                        <span class="sa-badge">SMART ARRIVAL ESTIMATOR</span>
+                        <span class="sa-traffic-tag">🟡 Moderate Traffic</span>
+                    </div>
+
+                    <div class="sa-calc-row">
+                        <div>
+                            <small>Estimated Turn Time</small>
+                            <strong>4:45 PM</strong>
+                        </div>
+                        <div class="arrow-sep">→</div>
+                        <div>
+                            <small>Travel + Buffer (22m)</small>
+                            <strong>Leave by 4:15 PM</strong>
+                        </div>
+                    </div>
+
+                    <div class="sa-disclaimer-box">
+                        <small>ℹ Simulated traffic provider active. Ready for Google Maps / TomTom API integration.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- =========================================================
+     HOW IT WORKS (4 SIMPLE STEPS)
+     ========================================================= -->
+<section class="section-how-it-works" id="how-it-works">
+    <div class="section-container">
+        <div class="section-header-center">
+            <span class="section-kicker">SIMPLE & PREDICTABLE</span>
+            <h2 class="section-title">How AI Queue Works</h2>
+            <p class="section-subtitle">Four smooth steps from choosing your service to being served.</p>
+        </div>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-badge">01</div>
+                <h3>Select a Service</h3>
+                <p>Pick from registered hospitals, clinics, salons, service hubs, restaurants, or colleges.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-badge">02</div>
+                <h3>Join Digitally</h3>
+                <p>Select your priority category if applicable and claim your live digital token immediately.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-badge">03</div>
+                <h3>Track Smart Arrival</h3>
+                <p>Watch real-time queue movement and receive your tailored departure time recommendation.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-badge">04</div>
+                <h3>Arrive & Get Served</h3>
+                <p>Walk in calmly as your token is called without losing hours in physical lines.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- =========================================================
+     CTA BANNER
+     ========================================================= -->
+<section class="section-cta">
+    <div class="section-container">
+        <div class="cta-banner">
+            <div class="cta-copy">
+                <span class="cta-kicker">GET STARTED TODAY</span>
+                <h2>Transform your waiting experience.</h2>
+                <p>Join a queue in seconds or register your organization to deploy AI queue management.</p>
+            </div>
+            <div class="cta-actions">
+                <a href="/join" class="primary-button cta-primary">
+                    <span>Join a Queue</span>
+                    <span class="btn-arrow">→</span>
+                </a>
+                <a href="/register-org" class="secondary-button cta-secondary">
+                    <span>Register Organization</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

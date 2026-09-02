@@ -1,0 +1,112 @@
+{% extends "dashboard/layout.html" %}
+
+{% block page_title %}Services & Counter Management{% endblock %}
+
+{% block dash_content %}
+<div class="services-mgnt-grid">
+    <!-- Left Column: Services Offered -->
+    <div class="dash-panel-card">
+        <div class="panel-header">
+            <div>
+                <h3>🛠️ Configured Services</h3>
+                <small class="text-muted">{{ services | length }} active services for {{ org.name }}</small>
+            </div>
+        </div>
+
+        <div class="services-table-wrap">
+            <table class="dash-data-table">
+                <thead>
+                    <tr>
+                        <th>Service Name</th>
+                        <th>Avg Duration</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in services %}
+                        <tr>
+                            <td><strong>{{ s.name }}</strong></td>
+                            <td><span class="dur-pill">~{{ s.avg_duration_min }} min</span></td>
+                            <td><small class="text-muted">{{ s.description or "Standard workflow" }}</small></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Add Service Form -->
+        <div class="add-subform-box mt-4">
+            <h4>+ Add New Service</h4>
+            <form method="POST" action="/org/{{ org.slug }}/services" class="mini-inline-form">
+                <input type="hidden" name="action" value="add_service">
+                <div class="form-field-group">
+                    <label>Service Name</label>
+                    <input type="text" name="name" placeholder="e.g. Express Lab Testing" required>
+                </div>
+                <div class="form-field-group">
+                    <label>Avg Duration (min)</label>
+                    <input type="number" name="duration" value="15" min="2" max="180" required>
+                </div>
+                <div class="form-field-group">
+                    <label>Description</label>
+                    <input type="text" name="description" placeholder="Brief service details...">
+                </div>
+                <button type="submit" class="primary-button btn-sm">Add Service</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Counters & Staff -->
+    <div class="dash-panel-card">
+        <div class="panel-header">
+            <div>
+                <h3>⚡ Service Counters / Desks</h3>
+                <small class="text-muted">{{ counters | length }} physical counters configured</small>
+            </div>
+        </div>
+
+        <div class="counters-mgnt-list">
+            {% for c in counters %}
+                <div class="c-mgnt-row">
+                    <div class="c-mgnt-info">
+                        <span class="c-num-badge">#{{ c.counter_number }}</span>
+                        <div>
+                            <strong>{{ c.name }}</strong>
+                            <small class="d-block text-muted">Staff: {{ c.staff_name or "Unassigned" }}</small>
+                        </div>
+                    </div>
+
+                    <div class="c-mgnt-actions">
+                        <span class="status-pill-c {{ c.status | lower }}">{{ c.status }}</span>
+                        {% if c.status == 'Active' %}
+                            <button type="button" class="btn-sm btn-outline-warning" onclick="toggleCounterStatus('{{ org.slug }}', {{ c.id }}, 'Paused')">Pause</button>
+                            <button type="button" class="btn-sm btn-outline-danger" onclick="toggleCounterStatus('{{ org.slug }}', {{ c.id }}, 'Closed')">Close</button>
+                        {% elif c.status == 'Paused' %}
+                            <button type="button" class="btn-sm btn-outline-success" onclick="toggleCounterStatus('{{ org.slug }}', {{ c.id }}, 'Active')">Resume</button>
+                        {% else %}
+                            <button type="button" class="btn-sm btn-outline-success" onclick="toggleCounterStatus('{{ org.slug }}', {{ c.id }}, 'Active')">Open</button>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Add Counter Form -->
+        <div class="add-subform-box mt-4">
+            <h4>+ Add Another Counter Desk</h4>
+            <form method="POST" action="/org/{{ org.slug }}/services" class="mini-inline-form">
+                <input type="hidden" name="action" value="add_counter">
+                <div class="form-field-group">
+                    <label>Counter Label</label>
+                    <input type="text" name="name" placeholder="e.g. Counter {{ counters|length + 1 }} (Express Lane)">
+                </div>
+                <div class="form-field-group">
+                    <label>Assigned Staff Name</label>
+                    <input type="text" name="staff_name" placeholder="e.g. Staff Operator">
+                </div>
+                <button type="submit" class="primary-button btn-sm">Create Counter</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
