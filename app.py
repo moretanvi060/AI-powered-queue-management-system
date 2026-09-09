@@ -12,6 +12,10 @@ from traffic_service import smart_arrival_service, SimulatedTrafficProvider
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Automatically initialize database schema and seed demo data on application startup
+with app.app_context():
+    init_db()
+
 # ---------------------------------------------------------
 # Context Processors & Template Helpers
 # ---------------------------------------------------------

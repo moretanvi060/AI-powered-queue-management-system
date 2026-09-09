@@ -6,6 +6,9 @@ from config import Config
 DATABASE = Config.DATABASE_PATH
 
 def get_db():
+    db_dir = os.path.dirname(DATABASE)
+    if db_dir and not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
     connection = sqlite3.connect(DATABASE)
     connection.row_factory = sqlite3.Row
     # Enable foreign keys
